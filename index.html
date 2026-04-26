@@ -143,15 +143,17 @@
     }
 
     .search-form {
-      width: 100%;
+      width: min(620px, 100%);
+      margin: 0 auto;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 18px;
+      justify-content: center;
+      gap: 10px;
     }
 
     .search-input {
-      width: min(620px, 100%);
+      flex: 1;
+      min-width: 0;
       height: 54px;
       border: 1px solid rgba(255, 255, 255, 0.16);
       border-radius: 999px;
@@ -191,9 +193,10 @@
     }
 
     .go-button {
-      min-width: 130px;
-      height: 44px;
-      padding: 0 28px;
+      min-width: 82px;
+      height: 46px;
+      padding: 0 22px;
+      border-radius: 999px;
     }
 
     /* Shop */
@@ -275,8 +278,8 @@
     .product-overlay p {
       margin: 0;
       color: #eaf5ff;
-      font-size: 14px;
-      line-height: 1.25;
+      font-size: 16px;
+      line-height: 1.32;
       text-shadow: 0 1px 2px #000;
     }
 
@@ -439,6 +442,16 @@
     }
 
     @media (max-width: 520px) {
+      .search-form {
+        width: 100%;
+        gap: 8px;
+      }
+
+      .go-button {
+        min-width: 70px;
+        padding: 0 16px;
+      }
+
       .brand {
         gap: 10px;
       }
@@ -519,6 +532,8 @@
   <script>
     // ====== НАСТРОЙКА ТОВАРОВ ======
     // Фото должны лежать рядом с index.html. Лучше формат 3:4.
+    // Все товары стартуют в наличии.
+    // После покупки конкретный товар становится "Нет в наличии" до перезагрузки страницы.
     const products = [
       {
         title: "Shadow Packet",
@@ -544,11 +559,11 @@
         title: "Ghost Module",
         image: "product-3.png",
         price: "$120",
-        sold: true,
+        sold: false,
         h: "55 см",
         w: "2.0 кг",
         a: "39",
-        description: "Редкий модуль. Настолько редкий, что его уже нет в наличии."
+        description: "Редкий модуль. Пока в наличии, но после покупки станет недоступен."
       },
       {
         title: "Aqua Breach",
@@ -574,11 +589,11 @@
         title: "White Yellow Gate",
         image: "product-6.png",
         price: "$77",
-        sold: true,
+        sold: false,
         h: "36 см",
         w: "1.1 кг",
         a: "21",
-        description: "Там, где белое встречает жёлтое, кто-то уже всё раскупил."
+        description: "Там, где белое встречает жёлтое, кто-то уже почти всё раскупил."
       }
     ];
 
@@ -599,7 +614,7 @@
     const confirmRow = document.getElementById("confirmRow");
     const buyButton = document.getElementById("buyButton");
 
-    let currentProduct = null;
+    let currentProductIndex = null;
     let confirmed = false;
 
     // ====== MATRIX STRINGS ======
@@ -670,10 +685,11 @@
         `;
 
         const button = card.querySelector(".price-button");
-        if (!product.sold) {
-          button.addEventListener("click", () => openPurchase(product));
-        } else {
+
+        if (product.sold) {
           button.disabled = true;
+        } else {
+          button.addEventListener("click", () => openPurchase(index));
         }
 
         shopGrid.appendChild(card);
@@ -683,9 +699,12 @@
     renderProducts();
 
     // ====== MODALS ======
-    function openPurchase(product) {
-      currentProduct = product;
+    function openPurchase(index) {
+      currentProductIndex = index;
       confirmed = false;
+
+      const product = products[index];
+
       modalImage.src = product.image;
       modalTitle.textContent = product.title;
       confirmRow.classList.remove("checked");
@@ -695,7 +714,7 @@
 
     function closePurchaseModal() {
       purchaseBackdrop.classList.add("hidden");
-      currentProduct = null;
+      currentProductIndex = null;
     }
 
     function closeThanksModal() {
@@ -709,6 +728,7 @@
     }
 
     confirmRow.addEventListener("click", toggleConfirm);
+
     confirmRow.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
@@ -717,7 +737,11 @@
     });
 
     buyButton.addEventListener("click", () => {
-      if (!confirmed || !currentProduct) return;
+      if (!confirmed || currentProductIndex === null) return;
+
+      products[currentProductIndex].sold = true;
+      renderProducts();
+
       closePurchaseModal();
       thanksBackdrop.classList.remove("hidden");
     });
